@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using UnityEngine;
 using LiteNetLib;
+using LiteNetLib.Utils;
 
 namespace UnityMagicNet.Core
 {
@@ -13,11 +14,13 @@ namespace UnityMagicNet.Core
         public void Start(string IP, int Port, string ConnectionKey)
         {
             Client = new NetManager(listener);
-            Client.UnconnectedMessagesEnabled = true;
-            Client.UpdateTime = 15;
             Client.Start();
             Client.Connect(IP, Port, ConnectionKey);
+
             listener.NetworkErrorEvent += OnNetworkError;
+            listener.PeerConnectedEvent += OnPeerConnected;
+            listener.PeerDisconnectedEvent += OnPeerDisconnected;
+            //listener.NetworkReceiveEvent += OnNetworkReceive;
         }
 
         public void Update()
@@ -50,6 +53,9 @@ namespace UnityMagicNet.Core
 
         public void OnPeerConnected(NetPeer peer)
         {
+            NetDataWriter _dataWriter = new NetDataWriter();
+            _dataWriter.Put(PacketHandler.Packing("Test", "ssbkbjb", true));
+            peer.Send(_dataWriter, DeliveryMethod.Sequenced);
             Debug.Log("[CLIENT] We connected to ");
         }
 

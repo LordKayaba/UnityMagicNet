@@ -16,20 +16,24 @@ namespace UnityMagicNet
         RoomManager roomManager;
         UserManager userManager;
 
+
         void Start()
         {
+            string sd = PacketHandler.Packing("Test", "sssfc", true);
             if (network == null)
             {
                 network = this;
                 DontDestroyOnLoad(gameObject);
                 StartNetwork();
             }
+
         }
 
         void Update()
         {
             server.Update();
             client.Update();
+
         }
 
         public void StartNetwork()

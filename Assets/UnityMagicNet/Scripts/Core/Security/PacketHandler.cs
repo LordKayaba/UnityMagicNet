@@ -5,10 +5,11 @@ namespace UnityMagicNet.Core
 {
     public static class PacketHandler
     {
-        public static string Packing(Packet packet)
+        public static string Packing(string type, string data, bool processOnServer)
         {
-            packet.Token = SecurityUtils.GenerateToken();
-            packet.EncryptedToken = SecurityUtils.Encrypt(packet.Token);
+            Header header = new Header(type, processOnServer);
+            string header2 = SecurityUtils.Encrypt(header.Serialize());
+            Packet packet = new Packet(header2, data, header.Token2);
 
             string compressedData = Convert.ToBase64String(SecurityUtils.Compress(packet.Data));
             packet.Data = SecurityUtils.Encrypt(compressedData);
@@ -18,20 +19,21 @@ namespace UnityMagicNet.Core
             return jsonData;
         }
 
-        public static Packet UnPacking(string receivedData, bool isServer)
+        public static Role UnPacking(string receivedData, bool isServer)
         {
             try
             {
                 Packet packet = Packet.Deserialize(receivedData);
 
-                string decryptedToken = SecurityUtils.Decrypt(packet.EncryptedToken);
-                if (decryptedToken != packet.Token)
+                Header header = Header.Deserialize(SecurityUtils.Decrypt(packet.Header));
+
+                if (packet.Token != header.Token2)
                 {
                     Debug.LogError("Packet validation failed: Invalid token.");
                     return null;
                 }
 
-                if (isServer && packet.ProcessOnServer)
+                if (isServer && header.ProcessOnServer)
                 {
                     string decryptedData = SecurityUtils.Decrypt(packet.Data);
                     packet.Data = SecurityUtils.Decompress(Convert.FromBase64String(decryptedData));
@@ -42,7 +44,7 @@ namespace UnityMagicNet.Core
                     packet.Data = SecurityUtils.Decompress(Convert.FromBase64String(decryptedData));
                 }
 
-                return packet;
+                return new Role(header, packet, receivedData);
             }
             catch (Exception ex)
             {

@@ -2,32 +2,51 @@ using Newtonsoft.Json;
 
 namespace UnityMagicNet.Core
 {
-    public enum PacketType
+    public class Header
     {
-        Login,
-        Message,
-        GameData,
-        OtherTypes
+        [JsonProperty("F5")]
+        public string Type;
+
+        [JsonProperty("E4")]
+        public bool ProcessOnServer;
+
+        [JsonProperty("D3")]
+        public string Token2;
+
+        public Header(string type, bool processOnServer)
+        {
+            Type = type;
+            ProcessOnServer = processOnServer;
+            Token2 = SecurityUtils.GenerateToken();
+        }
+
+        public string Serialize()
+        {
+            return JsonConvert.SerializeObject(this);
+        }
+
+        public static Header Deserialize(string jsonData)
+        {
+            return JsonConvert.DeserializeObject<Header>(jsonData);
+        }
     }
 
     public class Packet
     {
         [JsonProperty("A0")]
-        public PacketType Type { get; set; }
-        [JsonProperty("B1")]
-        public string Token { get; set; }
-        [JsonProperty("C2")]
-        public string EncryptedToken { get; set; }
-        [JsonProperty("D3")]
-        public string Data { get; set; }
-        [JsonProperty("E4")]
-        public bool ProcessOnServer { get; set; }
+        public string Header;
 
-        public Packet(PacketType type, string data, bool processOnServer)
+        [JsonProperty("B1")]
+        public string Token;
+
+        [JsonProperty("C2")]
+        public string Data;
+
+        public Packet(string header, string data, string token)
         {
-            Type = type;
+            Header = header;
+            Token = token;
             Data = data;
-            ProcessOnServer = processOnServer;
         }
 
         public string Serialize()
@@ -38,6 +57,20 @@ namespace UnityMagicNet.Core
         public static Packet Deserialize(string jsonData)
         {
             return JsonConvert.DeserializeObject<Packet>(jsonData);
+        }
+    }
+
+    public class Role
+    {
+        public Header header;
+        public Packet packet;
+        public string receivedData;
+
+        public Role(Header header0, Packet packet0, string receivedData0)
+        {
+            header = header0;
+            packet = packet0;
+            receivedData = receivedData0;
         }
     }
 }

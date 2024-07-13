@@ -16,7 +16,6 @@ namespace UnityMagicNet.Core
         EventBasedNetListener listener = new EventBasedNetListener();
 
         string connectionKey;
-
         public void Start(int Port, string ConnectionKey)
         {
             connectionKey = ConnectionKey;
@@ -24,15 +23,13 @@ namespace UnityMagicNet.Core
             _dataWriter = new NetDataWriter();
             Server = new NetManager(listener);
             Server.Start(Port);
-            Server.BroadcastReceiveEnabled = true;
-            Server.UpdateTime = 15;
 
             listener.NetworkErrorEvent += OnNetworkError;
             listener.ConnectionRequestEvent += OnConnectionRequest;
             listener.PeerConnectedEvent += OnPeerConnected;
             listener.PeerDisconnectedEvent += OnPeerDisconnected;
+            listener.NetworkReceiveEvent += OnNetworkReceive;
 
-            Debug.Log(Server.ConnectedPeersCount);
         }
 
         public void Update()
@@ -58,10 +55,8 @@ namespace UnityMagicNet.Core
             if (Server != null)
                 Server.Stop();
         }
-        float time;
         public void OnPeerConnected(NetPeer peer)
         {
-            Debug.Log(Time.time - time);
             Debug.Log("[SERVER] We have new peer ");
             _ourPeer = peer;
         }
@@ -89,7 +84,6 @@ namespace UnityMagicNet.Core
 
         public void OnConnectionRequest(ConnectionRequest request)
         {
-            time = Time.time;
             request.AcceptIfKey(connectionKey);
             Debug.Log("client Request");
         }
@@ -101,8 +95,9 @@ namespace UnityMagicNet.Core
                 _ourPeer = null;
         }
 
-        public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod)
+        public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channel, DeliveryMethod deliveryMethod)
         {
+            Debug.Log(reader.GetString());
         }
 
         public void WriteNet(NetLogLevel level, string str, params object[] args)
