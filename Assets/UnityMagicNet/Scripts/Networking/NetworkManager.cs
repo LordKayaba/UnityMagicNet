@@ -8,6 +8,7 @@ namespace UnityMagicNet
     public class NetworkManager : MonoBehaviour
     {
         public static NetworkManager network;
+        public static NetworkEvents events = new NetworkEvents();
         public Configuration configuration = new Configuration();
 
         UdpServer server = new UdpServer();
@@ -46,6 +47,11 @@ namespace UnityMagicNet
 #else
             client.Start(configuration.IP, configuration.Port, configuration.ConnectionKey);
 #endif
+        }
+
+        public void SendToServer()
+        {
+
         }
 
         void OnDisable()

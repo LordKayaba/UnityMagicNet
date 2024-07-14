@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
+using UnityMagicNet.Core;
 
-namespace UnityMagicNet.Core
+namespace UnityMagicNet
 {
     public class Header
     {

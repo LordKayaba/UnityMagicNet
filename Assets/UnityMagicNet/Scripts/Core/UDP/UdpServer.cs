@@ -97,7 +97,7 @@ namespace UnityMagicNet.Core
 
         public void OnNetworkReceive(NetPeer peer, NetPacketReader reader, byte channel, DeliveryMethod deliveryMethod)
         {
-            Debug.Log(reader.GetString());
+            NetworkManager.events.Invoke(PacketHandler.UnPacking(reader.GetString(), true), true);
         }
 
         public void WriteNet(NetLogLevel level, string str, params object[] args)
