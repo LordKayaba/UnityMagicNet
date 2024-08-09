@@ -5,16 +5,29 @@ namespace UnityMagicNet.Core
 {
     public static class PacketHandler
     {
-        public static string Packing(string type, string data, bool processOnServer)
+        public static string Packing(string type, string data, DataType dataType)
         {
-            Header header = new Header(type, processOnServer);
-            string header2 = SecurityUtils.Encrypt(header.Serialize());
-            Packet packet = new Packet(header2, data, header.Token2);
+            string jsonData = "";
 
-            string compressedData = Convert.ToBase64String(SecurityUtils.Compress(packet.Data));
-            packet.Data = SecurityUtils.Encrypt(compressedData);
+            if (dataType != DataType.NoCompress)
+            {
+                Header header = new Header(type, dataType, "");
+                string header2 = SecurityUtils.Encrypt(header.Serialize());
+                Packet packet = new Packet(header2, data, header.Token2);
 
-            string jsonData = packet.Serialize();
+                string compressedData = Convert.ToBase64String(SecurityUtils.Compress(packet.Data));
+                packet.Data = SecurityUtils.Encrypt(compressedData);
+
+                jsonData = packet.Serialize();
+            }
+            else
+            {
+                Header header = new Header(type, dataType, data);
+                string header2 = SecurityUtils.Encrypt(header.Serialize());
+                Packet packet = new Packet(header2, "",header.Token2);
+
+                jsonData = packet.Serialize();
+            }
 
             return jsonData;
         }
@@ -24,6 +37,7 @@ namespace UnityMagicNet.Core
             try
             {
                 Packet packet = Packet.Deserialize(receivedData);
+                Debug.Log(packet.Header);
 
                 Header header = Header.Deserialize(SecurityUtils.Decrypt(packet.Header));
 
@@ -33,12 +47,7 @@ namespace UnityMagicNet.Core
                     return null;
                 }
 
-                if (isServer && header.ProcessOnServer)
-                {
-                    string decryptedData = SecurityUtils.Decrypt(packet.Data);
-                    packet.Data = SecurityUtils.Decompress(Convert.FromBase64String(decryptedData));
-                }
-                else if (!isServer)
+                if ((isServer && header.dataType == DataType.CompressOnServer) || (!isServer && (header.dataType != DataType.NoCompress)))
                 {
                     string decryptedData = SecurityUtils.Decrypt(packet.Data);
                     packet.Data = SecurityUtils.Decompress(Convert.FromBase64String(decryptedData));

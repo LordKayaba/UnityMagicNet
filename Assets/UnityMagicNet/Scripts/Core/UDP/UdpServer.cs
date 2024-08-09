@@ -11,7 +11,6 @@ namespace UnityMagicNet.Core
     {
         private NetManager Server;
         private NetPeer _ourPeer;
-        private NetDataWriter _dataWriter;
 
         EventBasedNetListener listener = new EventBasedNetListener();
 
@@ -20,7 +19,6 @@ namespace UnityMagicNet.Core
         {
             connectionKey = ConnectionKey;
             NetDebug.Logger = this;
-            _dataWriter = new NetDataWriter();
             Server = new NetManager(listener);
             Server.Start(Port);
 
@@ -57,8 +55,8 @@ namespace UnityMagicNet.Core
         }
         public void OnPeerConnected(NetPeer peer)
         {
-            Debug.Log("[SERVER] We have new peer ");
-            _ourPeer = peer;
+            NetworkManager.users.CreateUser(peer);
+            Debug.Log(NetworkManager.users.GetCount());
         }
 
         public void OnNetworkError(IPEndPoint endPoint, SocketError socketErrorCode)

@@ -9,10 +9,13 @@ namespace UnityMagicNet
     {
         public static NetworkManager network;
         public static NetworkEvents events = new NetworkEvents();
+        public static User Server;
+        public static UserManager users = new UserManager();
         public Configuration configuration = new Configuration();
 
         UdpServer server = new UdpServer();
         UdpClient client = new UdpClient();
+
 
         RoomManager roomManager;
         UserManager userManager;
@@ -20,7 +23,6 @@ namespace UnityMagicNet
 
         void Start()
         {
-            string sd = PacketHandler.Packing("Test", "sssfc", true);
             if (network == null)
             {
                 network = this;

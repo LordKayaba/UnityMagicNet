@@ -12,11 +12,11 @@ namespace UnityMagicNet
             users = new Dictionary<string, User>();
         }
 
-        public User CreateUser(string userId, NetPeer peer)
+        public void CreateUser(NetPeer peer)
         {
-            var user = new User(userId, peer);
+            string userId = "Client_" + peer.Id;
+            User user = new User(userId, peer);
             users[userId] = user;
-            return user;
         }
 
         public void RemoveUser(string userId)
@@ -28,6 +28,11 @@ namespace UnityMagicNet
         {
             users.TryGetValue(userId, out var user);
             return user;
+        }
+
+        public int GetCount()
+        {
+            return users.Count;
         }
     }
 }

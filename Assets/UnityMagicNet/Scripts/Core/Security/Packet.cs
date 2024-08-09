@@ -3,22 +3,31 @@ using UnityMagicNet.Core;
 
 namespace UnityMagicNet
 {
+    public enum DataType
+    {
+        NoCompress, Compress, CompressOnServer
+    }
+
     public class Header
     {
-        [JsonProperty("F5")]
+        [JsonProperty("G6")]
         public string Type;
 
-        [JsonProperty("E4")]
-        public bool ProcessOnServer;
+        [JsonProperty("F5")]
+        public DataType dataType;
 
-        [JsonProperty("D3")]
+        [JsonProperty("E4")]
         public string Token2;
 
-        public Header(string type, bool processOnServer)
+        [JsonProperty("D3")]
+        public string Data;
+
+        public Header(string type, DataType dataType0, string data)
         {
             Type = type;
-            ProcessOnServer = processOnServer;
+            dataType = dataType0;
             Token2 = SecurityUtils.GenerateToken();
+            Data = data;
         }
 
         public string Serialize()
@@ -65,6 +74,7 @@ namespace UnityMagicNet
     {
         public Header header;
         public Packet packet;
+        public string Data;
         public string receivedData;
 
         public Role(Header header0, Packet packet0, string receivedData0)
@@ -72,6 +82,14 @@ namespace UnityMagicNet
             header = header0;
             packet = packet0;
             receivedData = receivedData0;
+            if(header.dataType == DataType.NoCompress)
+            {
+                Data = header.Data;
+            }
+            else
+            {
+                Data = packet.Data;
+            }
         }
     }
 }

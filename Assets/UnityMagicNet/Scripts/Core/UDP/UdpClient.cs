@@ -53,10 +53,7 @@ namespace UnityMagicNet.Core
 
         public void OnPeerConnected(NetPeer peer)
         {
-            NetDataWriter _dataWriter = new NetDataWriter();
-            _dataWriter.Put(PacketHandler.Packing("Test", "ssbkbjb", true));
-            peer.Send(_dataWriter, DeliveryMethod.Sequenced);
-            Debug.Log("[CLIENT] We connected to ");
+            NetworkManager.Server = new User("Server", peer);
         }
 
         public void OnNetworkError(IPEndPoint endPoint, SocketError socketErrorCode)
