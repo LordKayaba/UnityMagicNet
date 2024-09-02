@@ -16,6 +16,9 @@ namespace UnityMagicNet
         UdpServer server = new UdpServer();
         UdpClient client = new UdpClient();
 
+        HttpServer http = new HttpServer("http://localhost:8080/");
+
+
 
         RoomManager roomManager;
         UserManager userManager;
@@ -29,7 +32,7 @@ namespace UnityMagicNet
                 DontDestroyOnLoad(gameObject);
                 StartNetwork();
             }
-
+            http.Start();
         }
 
         void Update()
@@ -60,7 +63,8 @@ namespace UnityMagicNet
         {
             server.Stop();
             client.Stop();
-            Debug.Log("Sever Stoped!");
+            http.Stop();
+            Debug.Log("Server stopped !");
         }
     }
 }
