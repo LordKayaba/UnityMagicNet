@@ -13,6 +13,7 @@ namespace UnityMagicNet
         public string ConnectionKey = "TestKey";
         public Server server;
         public Client client;
+        public Panel panel;
     }
 
     [Serializable]
@@ -25,6 +26,13 @@ namespace UnityMagicNet
     public class Client
     {
         
+    }
+
+    [Serializable]
+    public class Panel
+    {
+        public bool Web, App;
+        public string Username = "root", Password = "1234", WebAddress = "http://*:8080/";
     }
 
 }

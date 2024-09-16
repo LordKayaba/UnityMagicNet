@@ -1,45 +1,56 @@
-using System;
+﻿using System;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace UnityMagicNet.Core
 {
     public static class PacketHandler
     {
-        public static string Packing(string type, string data, DataType dataType)
+        public async static Task<string> Packing(string type, string data, DataType dataType)
         {
             string jsonData = "";
 
-            if (dataType != DataType.NoCompress)
+            try
             {
-                Header header = new Header(type, dataType, "");
-                string header2 = SecurityUtils.Encrypt(header.Serialize());
-                Packet packet = new Packet(header2, data, header.Token2);
+                if (dataType != DataType.NoCompress)
+                {
+                    Header header = new Header(type, dataType, "");
+                    string encryptedHeader = await SecurityUtils.Encrypt(header.Serialize());
 
-                string compressedData = Convert.ToBase64String(SecurityUtils.Compress(packet.Data));
-                packet.Data = SecurityUtils.Encrypt(compressedData);
+                    Packet packet = new Packet(encryptedHeader, data, header.Token2);
 
-                jsonData = packet.Serialize();
+                    Task<byte[]> compressedDataTask = SecurityUtils.Compress(packet.Data);
+                    Task<string> encryptedDataTask = SecurityUtils.Encrypt(Convert.ToBase64String(await compressedDataTask));
+
+                    packet.Data = await encryptedDataTask;
+
+                    jsonData = packet.Serialize();
+                }
+                else
+                {
+                    Header header = new Header(type, dataType, data);
+                    string encryptedHeader = await SecurityUtils.Encrypt(header.Serialize());
+
+                    Packet packet = new Packet(encryptedHeader, "", header.Token2);
+                    jsonData = packet.Serialize();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Header header = new Header(type, dataType, data);
-                string header2 = SecurityUtils.Encrypt(header.Serialize());
-                Packet packet = new Packet(header2, "",header.Token2);
-
-                jsonData = packet.Serialize();
+                Debug.LogError($"Error in Packing: {ex.Message}");
+                throw;
             }
 
             return jsonData;
         }
 
-        public static Role UnPacking(string receivedData, bool isServer)
+        public static async Task<Role> UnPacking(string receivedData, bool isServer)
         {
             try
             {
                 Packet packet = Packet.Deserialize(receivedData);
-                Debug.Log(packet.Header);
 
-                Header header = Header.Deserialize(SecurityUtils.Decrypt(packet.Header));
+                Header header = Header.Deserialize(await SecurityUtils.Decrypt(packet.Header));
 
                 if (packet.Token != header.Token2)
                 {
@@ -47,10 +58,10 @@ namespace UnityMagicNet.Core
                     return null;
                 }
 
-                if ((isServer && header.dataType == DataType.CompressOnServer) || (!isServer && (header.dataType != DataType.NoCompress)))
+                if ((isServer && header.dataType == DataType.CompressOnServer) || (!isServer && header.dataType != DataType.NoCompress))
                 {
-                    string decryptedData = SecurityUtils.Decrypt(packet.Data);
-                    packet.Data = SecurityUtils.Decompress(Convert.FromBase64String(decryptedData));
+                    string decryptedData = await SecurityUtils.Decrypt(packet.Data);
+                    packet.Data = await SecurityUtils.Decompress(Convert.FromBase64String(decryptedData));
                 }
 
                 return new Role(header, packet, receivedData);

@@ -16,7 +16,7 @@ namespace UnityMagicNet
         UdpServer server = new UdpServer();
         UdpClient client = new UdpClient();
 
-        HttpServer http = new HttpServer("http://localhost:8080/");
+        HttpServer http = new HttpServer("http://*:8080/");
 
 
 
@@ -52,11 +52,6 @@ namespace UnityMagicNet
 #else
             client.Start(configuration.IP, configuration.Port, configuration.ConnectionKey);
 #endif
-        }
-
-        public void SendToServer()
-        {
-
         }
 
         void OnDisable()

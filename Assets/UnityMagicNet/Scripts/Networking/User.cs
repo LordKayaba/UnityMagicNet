@@ -1,5 +1,6 @@
 using LiteNetLib;
 using LiteNetLib.Utils;
+using UnityEngine;
 using UnityMagicNet.Core;
 
 namespace UnityMagicNet 
@@ -15,10 +16,10 @@ namespace UnityMagicNet
             Peer = peer;
         }
 
-        public void Send(string type, DataType dataType,string data)
+        public async void Send(string type, DataType dataType,string data)
         {
             NetDataWriter _dataWriter = new NetDataWriter();
-            _dataWriter.Put(PacketHandler.Packing(type, data, dataType));
+            _dataWriter.Put(await PacketHandler.Packing(type, data, dataType));
             Peer.Send(_dataWriter, DeliveryMethod.Sequenced);
         }
     }

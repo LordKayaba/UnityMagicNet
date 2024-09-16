@@ -3,6 +3,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace UnityMagicNet.Core
 {
@@ -10,73 +11,85 @@ namespace UnityMagicNet.Core
     {
         private static readonly string EncryptionKey = "your-encryption-key";
 
-        public static byte[] Compress(string data)
+        public static async Task<byte[]> Compress(string data)
         {
             byte[] bytes = Encoding.UTF8.GetBytes(data);
-            using (var outputStream = new MemoryStream())
-            {
-                using (var gzipStream = new GZipStream(outputStream, CompressionMode.Compress))
-                {
-                    gzipStream.Write(bytes, 0, bytes.Length);
-                }
-                return outputStream.ToArray();
-            }
-        }
-
-        public static string Decompress(byte[] data)
-        {
-            using (var inputStream = new MemoryStream(data))
+            return await Task.Run(() =>
             {
                 using (var outputStream = new MemoryStream())
                 {
-                    using (var gzipStream = new GZipStream(inputStream, CompressionMode.Decompress))
+                    using (var gzipStream = new GZipStream(outputStream, CompressionMode.Compress))
                     {
-                        gzipStream.CopyTo(outputStream);
+                        gzipStream.Write(bytes, 0, bytes.Length);
                     }
-                    return Encoding.UTF8.GetString(outputStream.ToArray());
+                    return outputStream.ToArray();
                 }
-            }
+            });
         }
 
-        public static string Encrypt(string plainText)
+        public static async Task<string> Decompress(byte[] data)
+        {
+            return await Task.Run(() =>
+            {
+                using (var inputStream = new MemoryStream(data))
+                {
+                    using (var outputStream = new MemoryStream())
+                    {
+                        using (var gzipStream = new GZipStream(inputStream, CompressionMode.Decompress))
+                        {
+                            gzipStream.CopyTo(outputStream);
+                        }
+                        return Encoding.UTF8.GetString(outputStream.ToArray());
+                    }
+                }
+            });
+        }
+
+        public static async Task<string> Encrypt(string plainText)
         {
             byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
-            using (var aes = Aes.Create())
+            return await Task.Run(() =>
             {
-                var key = new Rfc2898DeriveBytes(EncryptionKey, Encoding.UTF8.GetBytes("SaltIsGoodForYou"));
-                aes.Key = key.GetBytes(32);  // 256 bits
-                aes.IV = key.GetBytes(16);   // 128 bits
-
-                using (var encryptor = aes.CreateEncryptor(aes.Key, aes.IV))
-                using (var memoryStream = new MemoryStream())
+                using (var aes = Aes.Create())
                 {
-                    using (var cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write))
+                    var key = new Rfc2898DeriveBytes(EncryptionKey, Encoding.UTF8.GetBytes("SaltIsGoodForYou"));
+                    aes.Key = key.GetBytes(32);  // 256 bits
+                    aes.IV = key.GetBytes(16);   // 128 bits
+
+                    using (var encryptor = aes.CreateEncryptor(aes.Key, aes.IV))
+                    using (var memoryStream = new MemoryStream())
                     {
-                        cryptoStream.Write(plainBytes, 0, plainBytes.Length);
+                        using (var cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write))
+                        {
+                            cryptoStream.Write(plainBytes, 0, plainBytes.Length);
+                        }
+                        return Convert.ToBase64String(memoryStream.ToArray());
                     }
-                    return Convert.ToBase64String(memoryStream.ToArray());
                 }
-            }
+            });
         }
 
-        public static string Decrypt(string encryptedText)
+        public static async Task<string> Decrypt(string encryptedText)
         {
             byte[] encryptedBytes = Convert.FromBase64String(encryptedText);
-            using (var aes = Aes.Create())
+            return await Task.Run(() =>
             {
-                var key = new Rfc2898DeriveBytes(EncryptionKey, Encoding.UTF8.GetBytes("SaltIsGoodForYou"));
-                aes.Key = key.GetBytes(32);  // 256 bits
-                aes.IV = key.GetBytes(16);   // 128 bits
-
-                using (var decryptor = aes.CreateDecryptor(aes.Key, aes.IV))
-                using (var memoryStream = new MemoryStream(encryptedBytes))
-                using (var cryptoStream = new CryptoStream(memoryStream, decryptor, CryptoStreamMode.Read))
+                using (var aes = Aes.Create())
                 {
-                    byte[] decryptedBytes = new byte[encryptedBytes.Length];
-                    int bytesRead = cryptoStream.Read(decryptedBytes, 0, decryptedBytes.Length);
-                    return Encoding.UTF8.GetString(decryptedBytes, 0, bytesRead);
+                    var key = new Rfc2898DeriveBytes(EncryptionKey, Encoding.UTF8.GetBytes("SaltIsGoodForYou"));
+                    aes.Key = key.GetBytes(32);  // 256 bits
+                    aes.IV = key.GetBytes(16);   // 128 bits
+
+                    using (var decryptor = aes.CreateDecryptor(aes.Key, aes.IV))
+                    using (var memoryStream = new MemoryStream(encryptedBytes))
+                    using (var cryptoStream = new CryptoStream(memoryStream, decryptor, CryptoStreamMode.Read))
+                    {
+                        byte[] decryptedBytes = new byte[encryptedBytes.Length];
+                        int bytesRead = cryptoStream.Read(decryptedBytes, 0, decryptedBytes.Length);
+                        return Encoding.UTF8.GetString(decryptedBytes, 0, bytesRead);
+                    }
                 }
-            }
+            });
         }
 
         public static string GenerateToken()
@@ -84,23 +97,26 @@ namespace UnityMagicNet.Core
             return Guid.NewGuid().ToString();
         }
 
-        public static string HashPassword(string password)
+        public static async Task<string> HashPasswordAsync(string password)
         {
-            using (SHA256 sha256 = SHA256.Create())
+            return await Task.Run(() =>
             {
-                byte[] bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-                StringBuilder builder = new StringBuilder();
-                for (int i = 0; i < bytes.Length; i++)
+                using (SHA256 sha256 = SHA256.Create())
                 {
-                    builder.Append(bytes[i].ToString("x2"));
+                    byte[] bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+                    StringBuilder builder = new StringBuilder();
+                    for (int i = 0; i < bytes.Length; i++)
+                    {
+                        builder.Append(bytes[i].ToString("x2"));
+                    }
+                    return builder.ToString();
                 }
-                return builder.ToString();
-            }
+            });
         }
 
-        public static bool VerifyPassword(string enteredPassword, string storedHash)
+        public static async Task<bool> VerifyPassword(string enteredPassword, string storedHash)
         {
-            string enteredHash = HashPassword(enteredPassword);
+            string enteredHash = await HashPasswordAsync(enteredPassword);
             return enteredHash.Equals(storedHash, StringComparison.OrdinalIgnoreCase);
         }
     }
